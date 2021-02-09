@@ -30,7 +30,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ruTorrent Mobile',
       theme: ThemeData.light().copyWith(
-        appBarTheme: AppBarTheme(),
         textTheme: ThemeData.light().textTheme.apply(
               fontFamily: 'SFUIDisplay',
             ),
@@ -41,9 +40,6 @@ class MyApp extends StatelessWidget {
       ),
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: kBackgroundDT,
-        appBarTheme: AppBarTheme(
-          color: kPrimaryDT,
-        ),
         canvasColor: kBackgroundDT,
         textTheme: ThemeData.dark().textTheme.apply(
               fontFamily: 'SFUIDisplay',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:rutorrentflutter/api/api_conf.dart';
 import 'package:rutorrentflutter/api/api_requests.dart';
@@ -14,14 +15,16 @@ class DiskExplorer extends StatefulWidget {
 class _DiskExplorerState extends State<DiskExplorer> {
   List<DiskFile> diskFiles = [];
   String path = '/';
-  bool isLoading = false;
+  bool isLoading = true;
+  bool isFeatureAvailable = false;
 
   _getDiskFiles() async {
     setState(() {
       isLoading = true;
     });
     diskFiles = await ApiRequests.getDiskFiles(
-        Provider.of<Api>(context, listen: false), path);
+            Provider.of<Api>(context, listen: false), path) ??
+        [];
     setState(() {
       isLoading = false;
     });
@@ -49,7 +52,10 @@ class _DiskExplorerState extends State<DiskExplorer> {
   @override
   void initState() {
     super.initState();
-    _getDiskFiles();
+    Future.delayed(Duration.zero)
+        .then((_) => isFeatureAvailable =
+            Provider.of<Api>(context, listen: false).isSeedboxAccount)
+        .then((_) => isFeatureAvailable ? _getDiskFiles() : isLoading = false);
   }
 
   @override
@@ -67,28 +73,53 @@ class _DiskExplorerState extends State<DiskExplorer> {
             style: TextStyle(fontWeight: FontWeight.w400),
           ),
         ),
-        body: Container(
-            child: Column(
-          children: <Widget>[
-            ListTile(
-              title: Text(
-                'Files (${diskFiles.length})',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            isLoading
-                ? Expanded(child: LoadingShimmer().loadingEffect(context))
-                : Expanded(
-                    child: ListView.builder(
-                      itemCount: diskFiles.length,
-                      itemBuilder: (context, index) {
-                        return DiskFileTile(
-                            diskFiles[index], path, goBackwards, goForwards);
-                      },
+        body: isFeatureAvailable
+            ? Container(
+                child: Column(
+                  children: <Widget>[
+                    ListTile(
+                      title: Text(
+                        'Files (${diskFiles.length})',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
+                    isLoading
+                        ? Expanded(
+                            child: LoadingShimmer().loadingEffect(context))
+                        : (diskFiles.length != 0)
+                            ? Expanded(
+                                child: ListView.builder(
+                                  itemCount: diskFiles.length,
+                                  itemBuilder: (context, index) {
+                                    return DiskFileTile(diskFiles[index], path,
+                                        goBackwards, goForwards);
+                                  },
+                                ),
+                              )
+                            : Expanded(
+                                child: Center(
+                                  child: SvgPicture.asset(
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? 'assets/logo/empty.svg'
+                                        : 'assets/logo/empty_dark.svg',
+                                    width: 120,
+                                    height: 120,
+                                  ),
+                                ),
+                              ),
+                  ],
+                ),
+              )
+            : Center(
+                child: Text(
+                  'Feature not available!',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 18,
                   ),
-          ],
-        )),
+                ),
+              ),
       ),
     );
   }

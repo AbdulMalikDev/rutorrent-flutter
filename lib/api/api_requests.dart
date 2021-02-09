@@ -18,7 +18,7 @@ class ApiRequests {
   /// Checks Added and Finished Torrents asynchronously by fetching History of last ten seconds
   static updateHistory(
       Api api, GeneralFeatures general, BuildContext context) async {
-    String timestamp = ((DateTime.now().millisecondsSinceEpoch -
+    String timestamp = ((CustomizableDateTime.current.millisecondsSinceEpoch -
                 Duration(seconds: 10).inMilliseconds) ~/
             1000)
         .toString();
@@ -32,8 +32,8 @@ class ApiRequests {
 
     var items = jsonDecode(response.body)['items'];
     for (var item in items) {
-      HistoryItem historyItem = HistoryItem(
-          item['name'], item['action'], item['action_time'], item['size']);
+      HistoryItem historyItem = HistoryItem(item['name'], item['action'],
+          item['action_time'], item['size'], item['hash']);
       historyItems.add(historyItem);
     }
     general.updateHistoryItems(historyItems, context);
@@ -65,41 +65,42 @@ class ApiRequests {
     List<Torrent> activeTorrents = [];
     List<String> labels = [];
     var torrentsPath = jsonDecode(responseBody)['t'];
-    for (var hashKey in torrentsPath.keys) {
-      var torrentObject = torrentsPath[hashKey];
-      Torrent torrent = Torrent(hashKey); // new torrent created
-      torrent.name = torrentObject[4];
-      torrent.size = int.parse(torrentObject[5]);
-      torrent.savePath = torrentObject[25];
-      torrent.label = torrentObject[14].toString().replaceAll("%20", " ");
-      torrent.completedChunks = int.parse(torrentObject[6]);
-      torrent.totalChunks = int.parse(torrentObject[7]);
-      torrent.sizeOfChunk = int.parse(torrentObject[13]);
-      torrent.torrentAdded = int.parse(torrentObject[21]);
-      torrent.torrentCreated = int.parse(torrentObject[26]);
-      torrent.seedsActual = int.parse(torrentObject[18]);
-      torrent.peersActual = int.parse(torrentObject[15]);
-      torrent.ulSpeed = int.parse(torrentObject[11]);
-      torrent.dlSpeed = int.parse(torrentObject[12]);
-      torrent.isOpen = int.parse(torrentObject[0]);
-      torrent.getState = int.parse(torrentObject[3]);
-      torrent.msg = torrentObject[29];
-      torrent.downloadedData = int.parse(torrentObject[8]);
-      torrent.uploadedData = int.parse(torrentObject[9]);
-      torrent.ratio = int.parse(torrentObject[10]);
+    if (torrentsPath.length > 0) {
+      for (var hashKey in torrentsPath.keys) {
+        var torrentObject = torrentsPath[hashKey];
+        Torrent torrent = Torrent(hashKey); // new torrent created
+        torrent.name = torrentObject[4];
+        torrent.size = int.parse(torrentObject[5]);
+        torrent.savePath = torrentObject[25];
+        torrent.label = torrentObject[14].toString().replaceAll("%20", " ");
+        torrent.completedChunks = int.parse(torrentObject[6]);
+        torrent.totalChunks = int.parse(torrentObject[7]);
+        torrent.sizeOfChunk = int.parse(torrentObject[13]);
+        torrent.torrentAdded = int.parse(torrentObject[21]);
+        torrent.torrentCreated = int.parse(torrentObject[26]);
+        torrent.seedsActual = int.parse(torrentObject[18]);
+        torrent.peersActual = int.parse(torrentObject[15]);
+        torrent.ulSpeed = int.parse(torrentObject[11]);
+        torrent.dlSpeed = int.parse(torrentObject[12]);
+        torrent.isOpen = int.parse(torrentObject[0]);
+        torrent.getState = int.parse(torrentObject[3]);
+        torrent.msg = torrentObject[29];
+        torrent.downloadedData = int.parse(torrentObject[8]);
+        torrent.uploadedData = int.parse(torrentObject[9]);
+        torrent.ratio = int.parse(torrentObject[10]);
 
-      torrent.api = api;
-      torrent.eta = torrent.getEta;
-      torrent.percentageDownload = torrent.getPercentageDownload;
-      torrent.status = torrent.getTorrentStatus;
-      torrentsList.add(torrent);
+        torrent.api = api;
+        torrent.eta = torrent.getEta;
+        torrent.percentageDownload = torrent.getPercentageDownload;
+        torrent.status = torrent.getTorrentStatus;
+        torrentsList.add(torrent);
 
-      if (torrent.status == Status.downloading &&
-          torrent.percentageDownload < 100) activeTorrents.add(torrent);
-      if(!labels.contains(torrent.label) && torrent.label != ""){
-        labels.add(torrent.label);
+        if (torrent.status == Status.downloading &&
+            torrent.percentageDownload < 100) activeTorrents.add(torrent);
+        if (!labels.contains(torrent.label) && torrent.label != "") {
+          labels.add(torrent.label);
+        }
       }
-
     }
     general.setActiveDownloads(activeTorrents);
     general.setListOfLabels(labels);
@@ -122,7 +123,6 @@ class ApiRequests {
                 });
             allTorrentList
                 .addAll(parseTorrentsData(response.body, general, api));
-
           } catch (e) {
             print(e);
           }
@@ -252,7 +252,6 @@ class ApiRequests {
         });
   }
 
-
   static addTorrentFile(Api api, String torrentPath) async {
     Fluttertoast.showToast(msg: 'Adding torrent');
     var request =
@@ -268,7 +267,6 @@ class ApiRequests {
     } catch (e) {
       print(e.toString());
     }
-
   }
 
   /// Gets list of trackers for a particular torrent
@@ -349,7 +347,7 @@ class ApiRequests {
             'href': rssItem.url,
             'rss': labelHash,
           });
-      var xmlResponse = xml.parse(response.body);
+      var xmlResponse = xml.XmlDocument.parse(response.body);
 
       var data =
           xmlResponse.lastChild.text; // extracting value stored in data tag
@@ -381,17 +379,24 @@ class ApiRequests {
 
     var filters = jsonDecode(response.body);
     for (var filter in filters) {
-      RSSFilter rssFilter = RSSFilter(
-        filter['name'],
-        filter['enabled'],
-        filter['pattern'],
-        filter['label'],
-        filter['exclude'],
-        filter['dir'],
-      );
+      RSSFilter rssFilter = RSSFilter.fromJson(filter);
       rssFilters.add(rssFilter);
     }
     return rssFilters;
+  }
+
+  /// Sets details of RSS Filters
+  static setRSSFilter(Api api, List<RSSFilter> filters) async {
+    Map<String, String> headers = {
+      "Content-Type": "application/x-www-form-urlencoded"
+    };
+    headers.addAll(api.getAuthHeader());
+    String queryString = "mode=setfilters&";
+    for (RSSFilter filter in filters ?? []) {
+      queryString += Uri(queryParameters: filter.toJson()).query + "&";
+    }
+    await api.ioClient
+        .post(Uri.parse(api.rssPluginUrl), headers: headers, body: queryString);
   }
 
   /// Gets History of last [lastHours] hours
@@ -415,8 +420,8 @@ class ApiRequests {
 
     List<HistoryItem> historyItems = [];
     for (var item in items) {
-      HistoryItem historyItem = HistoryItem(
-          item['name'], item['action'], item['action_time'], item['size']);
+      HistoryItem historyItem = HistoryItem(item['name'], item['action'],
+          item['action_time'], item['size'], item['hash']);
       historyItems.add(historyItem);
     }
     return historyItems;
@@ -424,29 +429,34 @@ class ApiRequests {
 
   /// Gets Disk Files
   static Future<List<DiskFile>> getDiskFiles(Api api, String path) async {
-    var response = await api.ioClient.post(Uri.parse(api.explorerPluginUrl),
-        headers: api.getAuthHeader(),
-        body: {
-          'cmd': 'get',
-          'src': path,
-        });
+    try {
+      var response = await api.ioClient.post(Uri.parse(api.explorerPluginUrl),
+          headers: api.getAuthHeader(),
+          body: {
+            'cmd': 'get',
+            'src': path,
+          });
 
-    var files = jsonDecode(response.body)['files'];
+      var files = jsonDecode(response.body)['files'];
 
-    List<DiskFile> diskFiles = [];
+      List<DiskFile> diskFiles = [];
 
-    for (var file in files) {
-      DiskFile diskFile = DiskFile();
+      for (var file in files) {
+        DiskFile diskFile = DiskFile();
 
-      diskFile.isDirectory = file['is_dir'];
-      diskFile.name = file['data']['name'];
-      diskFiles.add(diskFile);
+        diskFile.isDirectory = file['is_dir'];
+        diskFile.name = file['data']['name'];
+        diskFiles.add(diskFile);
+      }
+
+      return diskFiles;
+    } on Exception catch (e) {
+      print(e.toString());
+      return null;
     }
-
-    return diskFiles;
   }
 
-  static setTorrentLabel(Api api, String hashValue,{ String label}) async {
+  static setTorrentLabel(Api api, String hashValue, {String label}) async {
     try {
       await api.ioClient.post(Uri.parse(api.httpRpcPluginUrl),
           headers: api.getAuthHeader(),
@@ -464,13 +474,24 @@ class ApiRequests {
     try {
       await api.ioClient.post(Uri.parse(api.httpRpcPluginUrl),
           headers: api.getAuthHeader(),
+          body: {'mode': 'setlabel', 'hash': hashValue, 'v': ''});
+    } on Exception catch (e) {
+      print(e.toString() + "errrrr");
+    }
+  }
+
+  static removeHistoryItem(Api api, String hashValue) async {
+    Fluttertoast.showToast(msg: 'Removing Torrent from History');
+    try {
+      await api.ioClient.post(Uri.parse(api.historyPluginUrl),
+          headers: api.getAuthHeader(),
           body: {
-            'mode': 'setlabel',
+            'cmd': 'delete',
+            'mode': 'hstdelete',
             'hash': hashValue,
-            'v': ''
           });
     } on Exception catch (e) {
-      print(e.toString()+"errrrr");
+      print('err: ${e.toString()}');
     }
   }
 }

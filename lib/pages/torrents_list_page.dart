@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:rutorrentflutter/api/api_conf.dart';
 import 'package:rutorrentflutter/api/api_requests.dart';
@@ -35,11 +36,10 @@ class TorrentsListPage extends StatelessWidget {
     displayList = general.filterList(displayList, general.selectedFilter);
 
     //If Label is selected, filtering it using the label
-    if(general.isLabelSelected) {
+    if (general.isLabelSelected) {
       displayList =
           general.filterListUsingLabel(displayList, general.selectedLabel);
     }
-
 
     if (general.searchTextController.text.isNotEmpty) {
       //Searching : showing list on basis of searched text
@@ -88,19 +88,52 @@ class TorrentsListPage extends StatelessWidget {
                               general.torrentsList.length != 0)
                           ? TorrentTile(general.torrentsList[index])
                           : Center(
-                              child: Text(
-                                'No Torrents to Show',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w600),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset(
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? 'assets/logo/empty.svg'
+                                        : 'assets/logo/empty_dark.svg',
+                                    width: 120,
+                                    height: 120,
+                                  ),
+                                  SizedBox(
+                                    height: 15,
+                                  ),
+                                  Text(
+                                    'No Torrents to Show',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
                               ),
                             );
                     },
                   );
                 }
                 return Center(
-                  child: Text(
-                    'No Torrents to Show',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        Theme.of(context).brightness == Brightness.light
+                            ? 'assets/logo/empty.svg'
+                            : 'assets/logo/empty_dark.svg',
+                        width: 120,
+                        height: 120,
+                      ),
+                      SizedBox(
+                        height: 15,
+                      ),
+                      Text(
+                        'No Torrents to Show',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ],
                   ),
                 );
               },

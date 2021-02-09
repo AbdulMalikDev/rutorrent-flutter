@@ -17,6 +17,7 @@ enum Sort {
   ratio,
   size_ascending,
   size_descending,
+  none,
 }
 
 enum Filter {
@@ -26,6 +27,12 @@ enum Filter {
   Active,
   Inactive,
   Error,
+}
+
+enum NotificationChannelID {
+  NewTorrentAdded,
+  DownloadCompleted,
+  LowDiskSpace,
 }
 
 class GeneralFeatures extends ChangeNotifier {
@@ -92,6 +99,10 @@ class GeneralFeatures extends ChangeNotifier {
 
       case Sort.size_descending:
         torrentsList.sort((a, b) => a.size.compareTo(b.size));
+        return torrentsList.reversed.toList();
+
+      case Sort.none:
+        torrentsList.sort((a, b) => a.torrentAdded.compareTo(b.torrentAdded));
         return torrentsList.reversed.toList();
 
       default:
@@ -222,12 +233,16 @@ class GeneralFeatures extends ChangeNotifier {
   /// Active Labels
   // List of names of all the labels
   List<String> _listOfLabels = [];
-  get listOfLabels{
+  get listOfLabels {
     return _listOfLabels;
   }
 
   setListOfLabels(List<String> listOfLabels) {
-    _listOfLabels = listOfLabels;
+    if (_allAccounts) {
+      _listOfLabels = (_listOfLabels + listOfLabels).toSet().toList();
+    } else {
+      _torrentsList.isEmpty ? _listOfLabels = [] : _listOfLabels = listOfLabels;
+    }
     notifyListeners();
   }
 
@@ -239,7 +254,7 @@ class GeneralFeatures extends ChangeNotifier {
 
   get isLabelSelected => _isLabelSelected;
   get selectedLabel => _selectedLabel;
-  changeLabel(String label){
+  changeLabel(String label) {
     _selectedFilter = Filter.All;
     _isLabelSelected = true;
     _selectedLabel = label;
@@ -248,57 +263,62 @@ class GeneralFeatures extends ChangeNotifier {
   }
 
   List<Torrent> filterListUsingLabel(List<Torrent> torrentsList, String label) {
-
-        return torrentsList
-            .where((torrent) =>
-        torrent.label == label)
-            .toList();
-
-
+    return torrentsList.where((torrent) => torrent.label == label).toList();
   }
 
+  /// History Check
+  List<HistoryItem> _historyItems = [];
+  get historyItems => _historyItems;
 
-    /// History Check
-    List<HistoryItem> _historyItems = [];
-    get historyItems => _historyItems;
+  updateHistoryItems(List<HistoryItem> updatedList, BuildContext context) {
+    bool happenedNow(HistoryItem item) {
+      if (DateTime.now().millisecondsSinceEpoch ~/ 1000 - item.actionTime == 1)
+        return true;
+      return false;
+    }
 
-    updateHistoryItems(List<HistoryItem> updatedList, BuildContext context) {
-      bool happenedNow(HistoryItem item) {
-        if (DateTime.now().millisecondsSinceEpoch ~/ 1000 - item.actionTime == 1)
-          return true;
-        return false;
-      }
-
-      _historyItems = updatedList;
-      for (var item in updatedList) {
-        switch (item.action) {
-          case 1: // Torrent Added
-            if (happenedNow(item)) {
-              // Generate Notification
-              if (Provider.of<Settings>(context, listen: false)
-                  .addTorrentNotification) {
-                notifications.generate('New Torrent Added', item.name);
-              }
+    _historyItems = updatedList;
+    for (var item in updatedList) {
+      switch (item.action) {
+        case 1: // Torrent Added
+          if (happenedNow(item)) {
+            // Generate Notification
+            if (Provider.of<Settings>(context, listen: false)
+                .addTorrentNotification) {
+              notifications.generate('New Torrent Added', item.name,
+                  NotificationChannelID.NewTorrentAdded);
             }
-            break;
+          }
+          break;
 
-          case 2: // Torrent Finished
-            if (happenedNow(item)) {
-              // Generate Notification
-              if (Provider.of<Settings>(context, listen: false)
-                  .downloadCompleteNotification) {
-                notifications.generate('Download Completed', item.name);
-              }
+        case 2: // Torrent Finished
+          if (happenedNow(item)) {
+            // Generate Notification
+            if (Provider.of<Settings>(context, listen: false)
+                .downloadCompleteNotification) {
+              notifications.generate('Download Completed', item.name,
+                  NotificationChannelID.DownloadCompleted);
             }
-            break;
+          }
+          break;
 
-          case 3: // Torrent Deleted
-            if (happenedNow(item)) {
-              // Do Something
-            }
-            break;
-        }
+        case 3: // Torrent Deleted
+          if (happenedNow(item)) {
+            // Do Something
+          }
+          break;
       }
     }
   }
+}
 
+extension CustomizableDateTime on DateTime {
+  static DateTime _customTime;
+  static DateTime get current {
+    return _customTime ?? DateTime.now();
+  }
+
+  static set customTime(DateTime customTime) {
+    _customTime = customTime;
+  }
+}
