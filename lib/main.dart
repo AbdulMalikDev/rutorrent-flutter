@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rutorrentflutter/app/locator.dart';
+// import 'package:rutorrentflutter/app/locator.dart';
 import 'package:rutorrentflutter/ui/shared/shared_styles.dart';
 import 'package:stacked_services/stacked_services.dart';
 // import 'package:rutorrentflutter/utilities/constants.dart';
@@ -12,7 +12,7 @@ import 'package:stacked_services/stacked_services.dart';
 
 
 void main() {
-  setupLocator();
+  // setupLocator();
   runApp(MyApp());
 }
 
@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
       //     ? ThemeMode.light
       //     : ThemeMode.dark,
       home: null,
-      navigatorKey: locator<NavigationService>().navigatorKey,
+      // navigatorKey: locator<NavigationService>().navigatorKey,
     );
   }
 }
