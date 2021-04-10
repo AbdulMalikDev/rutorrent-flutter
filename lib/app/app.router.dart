@@ -9,9 +9,9 @@
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 
-import '../ui/views/home/home_view.dart';
-import '../ui/views/login/login_view.dart';
-import '../ui/views/splash/splash_view.dart';
+import '../ui/views/Home/home_view.dart';
+import '../ui/views/Login/login_view.dart';
+import '../ui/views/Splash/splash_view.dart';
 
 class Routes {
   static const String splashView = '/';
@@ -43,7 +43,7 @@ class StackedRouter extends RouterBase {
     },
     LoginView: (data) {
       return MaterialPageRoute<dynamic>(
-        builder: (context) => const LoginView(),
+        builder: (context) => LoginView(),
         settings: data,
       );
     },
