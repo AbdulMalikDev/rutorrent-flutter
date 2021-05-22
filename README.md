@@ -9,9 +9,6 @@
 ## Completion
 <img src="https://progress-bar.dev/45" alt="drawing" width="200"/>
 
-## Kanban Board
-[The Kanban Board contains the detail of the implementation](https://github.com/AbdulMalikDev/rutorrent-flutter/projects/1)
-
 ## **A ruTorrent-based client build in Flutter**
 
 The project is a flutter application for ruTorrent web interface. The app communicates with ruTorrent's backend via REST APIs to display the information about the torrents and the functionality to control its basic features. It also supports some plugin functionalities as provided in the ruTorrent web.
